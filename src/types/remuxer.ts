@@ -50,5 +50,6 @@ export interface RemuxerResult {
 
 export interface InitSegmentData {
     tracks?: TrackSet
+    initDTS?: number
     initPTS?: number
 }

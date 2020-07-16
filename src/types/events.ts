@@ -244,6 +244,7 @@ export interface NonNativeTextTracksData {
 export interface InitPTSFoundData {
   id: string
   frag: Fragment
+  initDTS: number
   initPTS: number
 }
 

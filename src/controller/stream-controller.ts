@@ -960,7 +960,12 @@ export default class StreamController extends BaseStreamController implements Ne
 
       // This would be nice if Number.isFinite acted as a typeguard, but it doesn't. See: https://github.com/Microsoft/TypeScript/issues/10038
       if (Number.isFinite(initSegment.initPTS as number)) {
-        hls.trigger(Events.INIT_PTS_FOUND, { frag, id, initPTS: initSegment.initPTS as number });
+        hls.trigger(Events.INIT_PTS_FOUND, {
+          frag,
+          id,
+          initDTS: initSegment.initDTS as number,
+          initPTS: initSegment.initPTS as number
+        });
       }
     }
 

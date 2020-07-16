@@ -26,8 +26,8 @@ export default class MP4Remuxer implements Remuxer {
   private config: HlsConfig;
   private typeSupported: any;
   private ISGenerated: boolean = false;
-  private _initPTS!: number;
-  private _initDTS!: number;
+  private _initPTS?: number;
+  private _initDTS?: number;
   private nextAvcDts: number | null = null;
   private nextAudioPts: number | null = null;
   private isSafari: boolean = false;
@@ -172,7 +172,7 @@ export default class MP4Remuxer implements Remuxer {
     const videoSamples = videoTrack.samples;
     const typeSupported = this.typeSupported;
     const tracks: TrackSet = {};
-    const computePTSDTS = (!Number.isFinite(this._initPTS));
+    const computePTSDTS = (!Number.isFinite(this._initPTS!));
     let container = 'audio/mp4';
     let initPTS;
     let initDTS;
@@ -241,6 +241,7 @@ export default class MP4Remuxer implements Remuxer {
 
       return {
         tracks,
+        initDTS,
         initPTS
       };
     }
@@ -251,7 +252,7 @@ export default class MP4Remuxer implements Remuxer {
     const inputSamples: Array<AvcSample> = track.samples;
     const outputSamples: Array<Mp4Sample> = [];
     const nbSamples: number = inputSamples.length;
-    const initPTS: number = this._initPTS;
+    const initPTS: number = this._initPTS as number;
     let nextAvcDts = this.nextAvcDts;
     let offset = 8;
     let minPTS: number = Number.POSITIVE_INFINITY;
@@ -313,7 +314,7 @@ export default class MP4Remuxer implements Remuxer {
         minPTS -= delta;
         inputSamples[0].dts = firstDTS;
         inputSamples[0].pts = minPTS;
-        logger.log(`Video: First PTS/DTS adjusted: ${Math.round(minPTS / 90)}/${Math.round(firstDTS / 90)}, delta: ${millisecondDelta} ms`);
+        logger.warn(`Video: First PTS/DTS adjusted: ${Math.round(minPTS / 90)}/${Math.round(firstDTS / 90)}, delta: ${millisecondDelta} ms`);
       }
     }
 
@@ -477,7 +478,7 @@ export default class MP4Remuxer implements Remuxer {
     const scaleFactor: number = inputTimeScale / mp4timeScale;
     const mp4SampleDuration: number = track.isAAC ? AAC_SAMPLES_PER_FRAME : MPEG_AUDIO_SAMPLE_PER_FRAME;
     const inputSampleDuration: number = mp4SampleDuration * scaleFactor;
-    const initPTS: number = this._initPTS;
+    const initPTS: number = this._initPTS as number;
     const rawMPEG: boolean = !track.isAAC && this.typeSupported.mpeg;
     const outputSamples: Array<Mp4Sample> = [];
 
@@ -714,14 +715,15 @@ export default class MP4Remuxer implements Remuxer {
     return audioData;
   }
 
-  remuxEmptyAudio (track: DemuxedAudioTrack, timeOffset: number, contiguous: boolean, videoData: Fragment) : RemuxedTrack | undefined {
+  remuxEmptyAudio (track: DemuxedAudioTrack, timeOffset: number, contiguous: boolean, videoData: RemuxedTrack) : RemuxedTrack | undefined {
     const inputTimeScale: number = track.inputTimeScale;
     const mp4timeScale: number = track.samplerate ? track.samplerate : inputTimeScale;
     const scaleFactor: number = inputTimeScale / mp4timeScale;
     const nextAudioPts: number | null = this.nextAudioPts;
+    const initDTS = this._initDTS as number;
     // sync with video's timestamp
-    const startDTS: number = (nextAudioPts !== null ? nextAudioPts : videoData.startDTS * inputTimeScale) + this._initDTS;
-    const endDTS: number = videoData.endDTS * inputTimeScale + this._initDTS;
+    const startDTS: number = (nextAudioPts !== null ? nextAudioPts : videoData.startDTS * inputTimeScale) + initDTS;
+    const endDTS: number = videoData.endDTS * inputTimeScale + initDTS;
     // one sample's duration value
     const frameDuration: number = scaleFactor * AAC_SAMPLES_PER_FRAME;
     // samples count of this segment's duration
@@ -752,8 +754,8 @@ export default class MP4Remuxer implements Remuxer {
       return;
     }
     const inputTimeScale = track.inputTimeScale;
-    const initPTS = this._initPTS;
-    const initDTS = this._initDTS;
+    const initPTS = this._initPTS as number;
+    const initDTS = this._initDTS as number;
     for (let index = 0; index < length; index++) {
       const sample = track.samples[index];
       // setting id3 pts, dts to relative time
@@ -776,7 +778,7 @@ export default class MP4Remuxer implements Remuxer {
     track.samples.sort((a, b) => a.pts - b.pts);
 
     const inputTimeScale = track.inputTimeScale;
-    const initPTS = this._initPTS;
+    const initPTS = this._initPTS as number;
     for (let index = 0; index < length; index++) {
       const sample = track.samples[index];
       // setting text pts, dts to relative time
