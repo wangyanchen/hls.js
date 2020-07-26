@@ -382,7 +382,9 @@ describe(`testing hls.js playback in the browser on "${browserDescription}"`, fu
   for (let name in streams) {
     stream = streams[name];
     let url = stream.url;
-    let config = stream.config || {};
+    let config = stream.config || {
+      maxMaxBufferLength: 15
+    };
     if (
       !stream.blacklist_ua ||
       stream.blacklist_ua.indexOf(browserConfig.name) === -1
